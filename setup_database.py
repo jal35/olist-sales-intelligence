@@ -1,10 +1,23 @@
 import os
+import shutil
+from pathlib import Path
+from dotenv import load_dotenv
 import kagglehub
 
-# Copy the exact string from your Kaggle screen here:
-os.environ['KAGGLE_USERNAME'] = "justinalde" 
-os.environ['KAGGLE_KEY'] = "KGAT_b86a99ec27e313e87734ac7cccd1fd3cd"
+load_dotenv()
 
-# Now run the download
-path = kagglehub.dataset_download("olistbr/brazilian-ecommerce")
-print("Data is located at:", path)
+def download_and_organize_dataset():
+    target_dir = Path("./olist_dataset")
+    target_dir.mkdir(parents=True, exist_ok=True)
+    
+    print("Downloading dataset from Kaggle...")
+    download_path = Path(kagglehub.dataset_download("olistbr/brazilian-ecommerce"))
+    
+    print(f"Moving files to {target_dir.resolve()}...")
+    for file in download_path.glob("*.csv"):
+        shutil.copy(file, target_dir / file.name)
+        
+    print("Dataset setup complete.")
+    
+if __name__ == "__main__":
+    download_and_organize_dataset()

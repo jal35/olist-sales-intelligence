@@ -1,42 +1,51 @@
 import os
+from pathlib import Path
 import pandas as pd
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 
-"""
-CONNECTION DETAILS
-# Use my PostgresSQL password for installation
-"""
-DB_PASS = 'Crafted6on$'
-DB_NAME = 'olist_db'
-engine = create_engine(f'postgresql://postgres:{DB_PASS}@localhost:5432/{DB_NAME}')
+# Load variables from .env into system memory
+load_dotenv()
 
-"""
-THE DATA PATH
-Point to the data set folders
-"""
+# Temporary debug check
+print("DEBUG - Loaded DB_USER:", os.getenv("DB_USER"))
+print("DEBUG - Loaded DB_NAME:", os.getenv("DB_NAME"))
 
-csv_folder =r'C:\Users\Justin\Projects\Olist\olist_dataset'
+# Retrive database credentials securely
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = os.getenv("DB_PORT", "5432")
+DB_NAME = os.getenv("DB_NAME", "olist_db")
 
-def ingest_data():
-    print("Beginning to move to PostgresSQL")
+# Create the SQLAlchemy connection engine
+DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+engine = create_engine(DATABASE_URL)
+
+def clean_table_name(filename: str) -> str:
+    base_name = filename.replace(".csv", "")
+    cleaned = base_name.replace("olist_", "").replace("_dataset", "")
+    return cleaned
     
-    for filename in os.listdir(csv_folder):
-        if filename.endswith('.csv'):
-            file_path = os.path.join(csv_folder, filename)
-            
-            # Make table names
-            table_name = filename.replace('.csv', '')
-            
-            print(f"Reading{filename}...")
-            df = pd.read_csv(file_path)
-            
-            print(f"Pushing {len(df)} rows to table '{table_name}")
-            # Using repalce, we check if it is ran twice, then refresh
-            df.to_sql(table_name, engine, if_exists='replace', index=False)     
-    print("\n Succesful download. All data is now in PostgreSQL")
+def load_csv_to_postgres():
+    data_dir = Path("./olist_dataset")
     
+    if not data_dir.exists():
+        print("Dataset directory not found. Run setup_database.py first.")
+        return
     
+    for csv_file in data_dir.glob("*.csv"):
+        table_name = clean_table_name(csv_file.name)
+        print(f"Loading {csv_file} into table '{table_name}'...")
+        
+        df = pd.read_csv(csv_file)
+        
+        df.to_sql(name=table_name, con=engine, if_exists="replace", index=False)
+        
+        print(f"Sucessfully loaded {len(df)} rows into '{table_name}'.")
+        
 if __name__ == "__main__":
-    ingest_data()
-    
+    load_csv_to_postgres()
+
+
     
