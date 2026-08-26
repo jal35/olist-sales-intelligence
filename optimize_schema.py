@@ -91,7 +91,7 @@ def optimize_schema():
         # Add Foreign Keys 
         # Links child tables back to parent tables. Stops "ghost" records, like items that reference an order that doesn't exist.
         # ---------------------------------------------------
-        print("Hooking up Foreing Key relationships...")
+        print("Hooking up Foreign Key relationships...")
         conn.execute(
             text("""
             ALTER TABLE orders
